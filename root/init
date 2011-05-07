@@ -120,6 +120,10 @@ get_filesystems() {
 	MMC_FS=`grep mmcblk0p2 /fugumod_sd/fugumod/fs.current | awk '{ print $2 }' | sed 's/ext.*/ext4/g'`
 }
 
+if test -f /fugumod.log
+then
+	mv /fugumod.log fugumod.old
+fi
 date >/fugumod.log
 echo "Version:$VERSION" >>/fugumod.log
 uname -a >>/fugumod.log
@@ -179,8 +183,8 @@ then
 	ULTRA=1
 fi
 
-insmod /lib/modules/fsr.ko
-insmod /lib/modules/fsr_stl.ko
+insmod /lib/modules/fsr.ko 2>>/fugumod.log
+insmod /lib/modules/fsr_stl.ko 2>>/fugumod.log
 
 mkdir -p /fugumod_sd
 mount -t vfat -o utf8 /dev/block/mmcblk0p1 /fugumod_sd
@@ -402,7 +406,8 @@ then
 # Ensure ROM is coherent
     rm -rf /system/xbin
     rm -f /system/bin/sh
-    ln -s /sbin/sh /system/bin/sh
+    #ln -s /sbin/sh /system/bin/sh
+    ln -s /system/bin/bash /system/bin/sh
 
 # Superuser
     rm /system/app/Superuser.apk
@@ -411,6 +416,13 @@ then
     cp /res/misc/Superuser.apk /system/app/
     chown 0.0 /system/app/Superuser.apk
     chmod 644 /system/app/Superuser.apk
+
+#Copy bootanimation to system
+    if test -f /system/bin/bootanimation
+    then
+	cp /res/misc/bootanimation /system/bin/
+	chmod 755 /system/bin/bootanimation
+    fi
 
 # FuguApp
     rm /system/app/fuguapp.apk
@@ -470,7 +482,6 @@ then
     tar xvf /fugumod_sd/fugumod/EFS_backup.tar >>/fugumod.log
     chown -R 1001:1001 /dbdata/efs
     chmod 0771 /dbdata/efs
-    cd /
 fi
 
 # remove temporary stuff to free memory
@@ -492,10 +503,10 @@ sed -i "s|fugu_mount_mmcblk0p2|mount ${MMC_FS} /dev/block/mmcblk0p2 /data nodira
 # some speed optimizations
 for i in stl9 stl10 stl11
 do
-        echo 512 > /sys/devices/virtual/block/$i/queue/read_ahead_kb
+        echo 2048 > /sys/devices/virtual/block/$i/queue/read_ahead_kb
 done
-echo 512 > /sys/devices/platform/s3c-sdhci.0/mmc_host/mmc0/mmc0:0001/block/mmcblk0/queue/read_ahead_kb
-echo 512 > /sys/devices/platform/s3c-sdhci.2/mmc_host/mmc2/mmc2:e624/block/mmcblk1/queue/read_ahead_kb
+echo 2048 > /sys/devices/platform/s3c-sdhci.0/mmc_host/mmc0/mmc0:0001/block/mmcblk0/queue/read_ahead_kb
+echo 2048 > /sys/devices/platform/s3c-sdhci.2/mmc_host/mmc2/mmc2:e624/block/mmcblk1/queue/read_ahead_kb
 
 # unmount all filesystems
 
